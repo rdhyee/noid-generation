@@ -33,6 +33,9 @@ RUN cpanm --notest ZMQ::LibZMQ3 && \
     cpanm --notest BerkeleyDB && \
     cpanm --notest Noid
 
+# https://github.com/rdhyee/noid-1 forked from https://github.com/paulkorir/noid
+RUN pip install git+https://github.com/rdhyee/noid-1.git@master#egg=noid
+
 
 # USER $NB_UID
 
