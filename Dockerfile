@@ -35,7 +35,9 @@ RUN cpanm --notest ZMQ::LibZMQ3 && \
     cpanm --notest Noid
 
 # https://github.com/rdhyee/noid-1 forked from https://github.com/paulkorir/noid
-RUN pip install git+https://github.com/rdhyee/noid-1.git@master#egg=noid
+RUN pip install git+https://github.com/rdhyee/noid-1.git@master#egg=noid \
+    click==8.0.3 \
+    colorama==0.4.4
 
 
 # USER $NB_UID
