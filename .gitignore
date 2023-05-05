@@ -2,4 +2,6 @@ NOID
 __pycache__
 .ipynb_checkpoints
 .vscode
+.gitignore
+.DS_STORE
 
