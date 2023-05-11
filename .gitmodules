@@ -1,0 +1,3 @@
+[submodule "ezid-client-tools"]
+	path = ezid-client-tools
+	url = git@github.com:rdhyee/ezid-client-tools.git

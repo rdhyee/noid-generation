@@ -1,5 +1,6 @@
 NOID
 __pycache__
+settings.py
 .ipynb_checkpoints
 .vscode
 .gitignore

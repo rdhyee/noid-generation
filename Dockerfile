@@ -37,7 +37,8 @@ RUN cpanm --notest ZMQ::LibZMQ3 && \
 # https://github.com/rdhyee/noid-1 forked from https://github.com/paulkorir/noid
 RUN pip install git+https://github.com/rdhyee/noid-1.git@master#egg=noid \
     click==8.0.3 \
-    colorama==0.4.4
+    colorama==0.4.4 \
+    git+https://github.com/rdhyee/ezid-client-tools.git@installable#egg=ezid_client_tools
 
 
 USER $NB_UID
