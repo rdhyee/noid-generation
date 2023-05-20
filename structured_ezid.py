@@ -1,3 +1,4 @@
+import re
 from itertools import chain
 from typing import Union, Optional, Dict, Any
 
@@ -14,15 +15,15 @@ class DOIIdentifier:
 
 
 class ARKIdentifier(EZIDIdentifier):
-    def __init__(self, naan: str, shoulder: str, postfix: str, new_style: bool = False):
+    def __init__(self, naan: str, shoulder: str, postfix: str, new_form: bool = False):
         self.naan = naan
         self.shoulder = shoulder
         self.postfix = postfix
-        self.new_style = new_style
+        self.new_form = new_form
 
     def __repr__(self):
         """Return a string representation of the identifier."""
-        label = "ark:" if self.new_style else "ark:/"
+        label = "ark:" if self.new_form else "ark:/"
         return f"{label}{self.naan}/{self.shoulder}{self.postfix}"
 
 
@@ -70,3 +71,26 @@ class Client2(ect.Client):
         self.args.operation = [f"""view{"!" if prefix_matching else ""}""", id_]
         r = self.operation()
         return ANVL.parse_anvl_str(r.encode("utf-8"))
+
+
+def oc_arks_filter(s):
+    """
+    regular expression that recognizes a limited set of paths
+    Only lowercase letters, numbers, underscores are allowed in any given part, but there may one or more parts, separated by "/"
+    In the  the leaf name, there may be periods -- but no period is allowed at the end
+    stem can't be empty
+
+    for example -- these are allowed:
+
+    hello
+    hello/there/dog
+    hello/there/dog.py
+
+    Not allowed:
+
+    a/b/c.json.
+    hello/there//dog
+
+    """
+
+    return re.match(r"^[a-z0-9_]+(?:/[a-z0-9_]+)*\.?[a-z0-9_]+$", s) is not None

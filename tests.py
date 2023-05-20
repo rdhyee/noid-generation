@@ -2,6 +2,7 @@ import os
 import pytest
 import ezid_client_tools as ect
 from ezid_client_tools.utils import ANVL
+import structured_ezid as sezid
 
 
 EZID_USER = os.environ.get("EZID_USER")
@@ -76,3 +77,26 @@ class TestClient:
             "erc.who",
             "success",
         }
+
+
+class TestOcArksFilter:
+    @pytest.mark.parametrize(
+        "input_value, expected_result",
+        [
+            ("hello", True),
+            ("HELLO", False),
+            ("hello.123", True),
+            ("hello/there/dog", True),
+            ("hello/there/dog/", False),
+            ("hello/there", True),
+            ("hello//there", False),
+            ("-", False),
+            ("/", False),
+            ("hello/there//dog", False),
+            ("hello/there/.dog", False),
+            ("hello/there/.dog/", False),
+            ("hello/there/.dog/cat.jpg", False),
+        ],
+    )
+    def test_oc_arks_filter(self, input_value, expected_result):
+        assert sezid.oc_arks_filter(input_value) == expected_result
