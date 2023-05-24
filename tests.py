@@ -17,10 +17,36 @@ if (EZID_USER is None) or (EZID_PASSWD is None):
 TEST_NAAN = "99999"
 TEST_SHOULDER = "fk4"
 # an id for testing -- conceivably it can taken by someone else
-TEST_ID = "/00/a5"
+TEST_ID = "00/a5"
 
 OC_NAAN = "28722"
 OC_PREREG_SHOULDER = "r2"
+
+
+class TestARKIndentifier:
+    def test_ark_identifier(self):
+        ark = sezid.ARKIdentifier(TEST_NAAN, TEST_SHOULDER, TEST_ID)
+        assert ark.naan == TEST_NAAN
+        assert ark.shoulder == TEST_SHOULDER
+        assert ark.postfix == TEST_ID
+        assert ark.new_form == False
+        assert ark.__repr__() == f"ark:/99999/fk400/a5"
+
+    def test_ark_identifier_new_form(self):
+        ark = sezid.ARKIdentifier(TEST_NAAN, TEST_SHOULDER, TEST_ID, new_form=True)
+        assert ark.naan == TEST_NAAN
+        assert ark.shoulder == TEST_SHOULDER
+        assert ark.postfix == TEST_ID
+        assert ark.new_form == True
+        assert ark.__repr__() == f"ark:99999/fk400/a5"
+
+    def test_ark_identifier_from_string(self):
+        ark = sezid.ARKIdentifier(s=f"ark:/99999/fk400/a5", shoulder_size=3)
+        assert ark.naan == TEST_NAAN
+        assert ark.shoulder == TEST_SHOULDER
+        assert ark.postfix == TEST_ID
+        assert ark.new_form == False
+        assert ark.__repr__() == f"ark:/99999/fk400/a5"
 
 
 class TestConsoleClient:
