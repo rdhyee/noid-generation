@@ -1,3 +1,4 @@
+import datetime
 import os
 import pytest
 import ezid_client_tools as ect
@@ -16,11 +17,18 @@ if (EZID_USER is None) or (EZID_PASSWD is None):
 
 TEST_NAAN = "99999"
 TEST_SHOULDER = "fk4"
-# an id for testing -- conceivably it can taken by someone else
-TEST_ID = "00/a5"
+TEST_ID = "isamplestest"
 
 OC_NAAN = "28722"
 OC_PREREG_SHOULDER = "r2"
+
+
+def test_divide_by_zero():
+    """
+    This test should fail -- it's here to teach Raymond about pytest.raises
+    """
+    with pytest.raises(ZeroDivisionError):
+        1 / 0
 
 
 class TestARKIndentifier:
@@ -30,7 +38,7 @@ class TestARKIndentifier:
         assert ark.shoulder == TEST_SHOULDER
         assert ark.postfix == TEST_ID
         assert ark.new_form == False
-        assert ark.__repr__() == f"ark:/99999/fk400/a5"
+        assert ark.__repr__() == "ark:/99999/fk4isamplestest"
 
     def test_ark_identifier_new_form(self):
         ark = sezid.ARKIdentifier(TEST_NAAN, TEST_SHOULDER, TEST_ID, new_form=True)
@@ -38,15 +46,15 @@ class TestARKIndentifier:
         assert ark.shoulder == TEST_SHOULDER
         assert ark.postfix == TEST_ID
         assert ark.new_form == True
-        assert ark.__repr__() == f"ark:99999/fk400/a5"
+        assert ark.__repr__() == "ark:99999/fk4isamplestest"
 
     def test_ark_identifier_from_string(self):
-        ark = sezid.ARKIdentifier(s=f"ark:/99999/fk400/a5", shoulder_size=3)
+        ark = sezid.ARKIdentifier(s="ark:/99999/fk4isamplestest", shoulder_size=3)
         assert ark.naan == TEST_NAAN
         assert ark.shoulder == TEST_SHOULDER
         assert ark.postfix == TEST_ID
         assert ark.new_form == False
-        assert ark.__repr__() == f"ark:/99999/fk400/a5"
+        assert ark.__repr__() == "ark:/99999/fk4isamplestest"
 
 
 class TestConsoleClient:
@@ -75,19 +83,22 @@ class TestConsoleClient:
 class TestClient:
     @pytest.fixture
     def client(self):
-        client = ect.ConsoleClient()
+        client = ect.Client()
         client.args.credentials = f"{EZID_USER}:{EZID_PASSWD}"
         client.args.server = "p"
         return client
 
-    def test_client_view(self, client):
-        client = ect.Client()
+    def test_client_login(self, client):
+        client.args.server = "s"
+        client.args.operation = ["login"]
+        response = client.operation()
+        assert isinstance(response, str)
 
-        client.args.credentials = f"{EZID_USER}:{EZID_PASSWD}"
+    def test_client_view(self, client):
         client.args.server = "p"
 
         client.args.operation = ["view", "ark:/28722/k2154wc6r"]
-        r = ANVL.parse_anvl_str(client.operation().encode("utf-8"))
+        r = ANVL.parse_anvl_str(client.operation()[0].encode("utf-8"))
         assert type(r) == ect.utils.LastUpdatedOrderedDict
         assert set(r.keys()) == {
             "_created",
@@ -103,6 +114,49 @@ class TestClient:
             "erc.who",
             "success",
         }
+
+
+class TestClient2:
+    @pytest.fixture
+    def client2(self):
+        client = sezid.Client2()
+        client.args.credentials = f"{EZID_USER}:{EZID_PASSWD}"
+        client.args.server = "s"
+        return client
+
+    def test_client_create_ok(self, client2):
+        dt = datetime.datetime.utcnow()
+
+        metadata_ = {
+            "profile": "erc",
+            "erc.who": "Raymond Yee",
+            "erc.what": "container for testing iSample-Open Context interactions with the EZID service",
+            "erc.when": dt.replace(microsecond=0).isoformat(),
+        }
+
+        postfix = TEST_ID
+        ark_ = sezid.ARKIdentifier(TEST_NAAN, TEST_SHOULDER, postfix)
+
+        r = client2.create_identifier(ark_, metadata_, update=True)
+
+    def test_client_create_error(self, client2):
+        """A call to update this identifier is expected to fail because of the _bad_field metadata field"""
+        dt = datetime.datetime.utcnow()
+
+        metadata_ = {
+            "profile": "erc",
+            "erc.who": "Raymond Yee",
+            "erc.what": "container for testing iSample-Open Context interactions with the EZID service",
+            "erc.when": dt.replace(microsecond=0).isoformat(),
+            "_bad_field": "xxxx",
+        }
+
+        postfix = TEST_ID
+        ark_ = sezid.ARKIdentifier(TEST_NAAN, TEST_SHOULDER, postfix)
+
+        with pytest.raises(ect.HTTPClientError) as e:
+            r = client2.create_identifier(ark_, metadata_, update=True)
+        assert e.value.status == 400
 
 
 class TestOcArksFilter:
