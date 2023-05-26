@@ -75,7 +75,8 @@ class Client2(ect.Client):
         self.args.operation = [f"""create{"!" if update else ""}""", id_]
         if metadata is not None:
             self.args.operation += list(chain(*metadata.items()))
-        return self.operation()
+        (response, headers, status) = self.operation()
+        return (response, headers, status)
 
     def view_identifier(
         self, id_: Union[str, ARKIdentifier], prefix_matching: bool = False
@@ -93,8 +94,13 @@ class Client2(ect.Client):
         if isinstance(id_, ARKIdentifier):
             id_ = str(id_)
         self.args.operation = [f"""view{"!" if prefix_matching else ""}""", id_]
-        r = self.operation()
-        return ANVL.parse_anvl_str(r.encode("utf-8"))
+        (response, headers, status) = self.operation()
+        return (
+            response,
+            ANVL.parse_anvl_str(response.encode("utf-8")),
+            headers,
+            status,
+        )
 
     def view_identifier_or_ancestor(
         self, id_: Union[str, ARKIdentifier], prefix_matching: bool = False

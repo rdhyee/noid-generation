@@ -18,6 +18,7 @@ if (EZID_USER is None) or (EZID_PASSWD is None):
 TEST_NAAN = "99999"
 TEST_SHOULDER = "fk4"
 TEST_ID = "isamplestest"
+TEST_PROJECT_ID = "prefixmatch"
 
 OC_NAAN = "28722"
 OC_PREREG_SHOULDER = "r2"
@@ -38,7 +39,7 @@ class TestARKIndentifier:
         assert ark.shoulder == TEST_SHOULDER
         assert ark.postfix == TEST_ID
         assert ark.new_form == False
-        assert ark.__repr__() == "ark:/99999/fk4isamplestest"
+        assert ark.__repr__() == f"ark:/{TEST_NAAN}/{TEST_SHOULDER}{TEST_ID}"
 
     def test_ark_identifier_new_form(self):
         ark = sezid.ARKIdentifier(TEST_NAAN, TEST_SHOULDER, TEST_ID, new_form=True)
@@ -46,15 +47,17 @@ class TestARKIndentifier:
         assert ark.shoulder == TEST_SHOULDER
         assert ark.postfix == TEST_ID
         assert ark.new_form == True
-        assert ark.__repr__() == "ark:99999/fk4isamplestest"
+        assert ark.__repr__() == f"ark:{TEST_NAAN}/{TEST_SHOULDER}{TEST_ID}"
 
     def test_ark_identifier_from_string(self):
-        ark = sezid.ARKIdentifier(s="ark:/99999/fk4isamplestest", shoulder_size=3)
+        ark = sezid.ARKIdentifier(
+            s=f"ark:/{TEST_NAAN}/{TEST_SHOULDER}{TEST_ID}", shoulder_size=3
+        )
         assert ark.naan == TEST_NAAN
         assert ark.shoulder == TEST_SHOULDER
         assert ark.postfix == TEST_ID
         assert ark.new_form == False
-        assert ark.__repr__() == "ark:/99999/fk4isamplestest"
+        assert ark.__repr__() == f"ark:/{TEST_NAAN}/{TEST_SHOULDER}{TEST_ID}"
 
 
 class TestConsoleClient:
@@ -124,6 +127,20 @@ class TestClient2:
         client.args.server = "s"
         return client
 
+    def test_percent_encoded_prefix(self, client2):
+        postfix = "#"
+        ark_ = sezid.ARKIdentifier(TEST_NAAN, TEST_SHOULDER, postfix)
+        (response, headers, status) = client2.create_identifier(ark_, update=True)
+        assert response == f"success: ark:/{TEST_NAAN}/{TEST_SHOULDER}%2523"
+        assert status == 201
+
+    def test_invalid_posfix(self, client2):
+        postfix = "我"
+        ark_ = sezid.ARKIdentifier(TEST_NAAN, TEST_SHOULDER, postfix)
+        with pytest.raises(ect.HTTPClientError) as e:
+            (response, headers, status) = client2.create_identifier(ark_, update=True)
+            assert status == 400
+
     def test_client_create_ok(self, client2):
         dt = datetime.datetime.utcnow()
 
@@ -137,7 +154,14 @@ class TestClient2:
         postfix = TEST_ID
         ark_ = sezid.ARKIdentifier(TEST_NAAN, TEST_SHOULDER, postfix)
 
-        r = client2.create_identifier(ark_, metadata_, update=True)
+        (response, headers, status) = client2.create_identifier(
+            ark_, metadata_, update=True
+        )
+        # TO DO: any way to get status of 200
+        # EZID returns a 201 HTTP status code if the identifier was created
+        # or a 200 HTTP status code if the identifier already existed and was successfully updated.
+
+        assert status == 201
 
     def test_client_create_error(self, client2):
         """A call to update this identifier is expected to fail because of the _bad_field metadata field"""
@@ -156,7 +180,7 @@ class TestClient2:
 
         with pytest.raises(ect.HTTPClientError) as e:
             r = client2.create_identifier(ark_, metadata_, update=True)
-        assert e.value.status == 400
+            assert e.value.status == 400
 
 
 class TestOcArksFilter:
