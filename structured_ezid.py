@@ -192,12 +192,16 @@ class Client2(ect.Client):
         )
 
     def view_identifier_or_ancestor(
-        self, id_: Union[str, ARKIdentifier], prefix_matching: bool = False
+        self,
+        id_: Union[str, ARKIdentifier],
+        prefix_matching: bool = False,
+        shoulder_size: int = 2,
     ):
         """
         View an identifier's metadata or the metadata of its closest ancestor.
         Check whether there is metadata directly for id_.
-        If not, then do prefix lookup for the parent -- maybe need to do a recursive look up the tree until we hit an actual ancestor.
+        If not, then do prefix lookup for the parent -- maybe need to do
+        a recursive look up the tree until we hit an actual ancestor.
 
         Parameters
         ----------
@@ -205,11 +209,66 @@ class Client2(ect.Client):
             The identifier, which can be a string or an ARKIdentifier object.
         prefix_matching : bool, optional
             Whether to enable prefix matching for the identifier (default is False).
+        shoulder_size: int, optional
+            for an id_ that is a string, specify the shoulder_size
         """
+
+        if isinstance(id_, str):
+            id_ = ARKIdentifier(s=id_, shoulder_size=shoulder_size)
+
         try:
-            return self.view_identifier(id_, prefix_matching=False)
+            (response, parsed_response, headers, status) = self.view_identifier(
+                id_, prefix_matching=True
+            )
         except ect.HTTPClientError as e:
-            p = P(id_)
+            return (None, None)
+
+        else:
+            g = re1.match(parsed_response["success"]).groups()
+            if g is not None:
+                if g[1] is not None:
+                    # TO DO: if g[0] is an ancestor of g[1] we're good
+                    if ARKIdentifier(
+                        s=g[1], shoulder_size=shoulder_size
+                    ).is_relative_to(
+                        ARKIdentifier(s=g[0], shoulder_size=shoulder_size)
+                    ):
+                        return (
+                            ARKIdentifier(s=g[0], shoulder_size=shoulder_size),
+                            parsed_response,
+                            False,
+                        )
+                    # otherwise do a search on the ancestor on the same level as g[1]
+                    else:
+                        wrong_candidate_ark = ARKIdentifier(
+                            s=g[0], shoulder_size=shoulder_size
+                        )
+                        # if the wrong_candidate is on the same level as id_ then need to do an exact match for id_ first and if no luck,
+                        # then do fuzzy match on parent
+                        if len(id_.parts) == len(wrong_candidate_ark.parts):
+                            try:
+                                (
+                                    response,
+                                    parsed_response,
+                                    headers,
+                                    status,
+                                ) = self.view_identifier(id_, prefix_matching=False)
+                            except ect.HTTPClientError as e:
+                                next_candidate_ark = id_.parent
+                            else:
+                                return (id_, parsed_response)
+                        else:
+                            next_candidate_ark = id_.parents[
+                                -1 - len(wrong_candidate_ark.parts)
+                            ]
+                        return self.view_identifier_or_ancestor(
+                            next_candidate_ark, prefix_matching=True
+                        )
+                else:
+                    return (
+                        ARKIdentifier(s=g[0], shoulder_size=shoulder_size),
+                        parsed_response,
+                    )
 
 
 def oc_arks_filter(s):
