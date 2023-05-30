@@ -42,13 +42,102 @@ class ARKIdentifier(EZIDIdentifier):
             shoulder, postfix = s[:shoulder_size], s[shoulder_size:]
         self.naan = naan
         self.shoulder = shoulder
+        if postfix == ".":  # translate the root to an empty string
+            postfix = ""
         self.postfix = postfix
         self.new_form = new_form
+
+    def __eq__(self, __value: object) -> bool:
+        return (
+            self.naan == __value.naan
+            and self.shoulder == __value.shoulder
+            and self.postfix == __value.postfix
+        )
 
     def __repr__(self):
         """Return a string representation of the identifier."""
         label = "ark:" if self.new_form else "ark:/"
         return f"{label}{self.naan}/{self.shoulder}{self.postfix}"
+
+    @property
+    def parent(self):
+        p = P(self.postfix)
+        return ARKIdentifier(self.naan, self.shoulder, str(p.parent))
+
+    @property
+    def parents(self):
+        p = P(self.postfix)
+        return [ARKIdentifier(self.naan, self.shoulder, str(x)) for x in p.parents]
+
+    @property
+    def parts(self):
+        p = P(self.postfix)
+        return p.parts
+
+    @property
+    def name(self):
+        p = P(self.postfix)
+        return p.name
+
+    @property
+    def stem(self):
+        p = P(self.postfix)
+        return p.stem
+
+    @property
+    def suffix(self):
+        p = P(self.postfix)
+        return p.suffix
+
+    @property
+    def suffixes(self):
+        p = P(self.postfix)
+        return p.suffixes
+
+    @property
+    def root(self):
+        p = P(self.postfix)
+        return ARKIdentifier(self.naan, self.shoulder, str(p.root))
+
+    @property
+    def is_valid(self):
+        return oc_arks_filter(self.postfix)
+
+    def is_relative_to(self, id2: Union[str, "ARKIdentifier"]):
+        """
+        Return True if the identifier is relative to the other identifier.
+        id2: Union[str, ARKIdentifier],
+        """
+        if isinstance(id2, str):
+            # if string, assume same naan and shoulder
+            p = P(self.postfix)
+            return p.is_relative_to(id2)
+        elif isinstance(id2, ARKIdentifier):
+            if self.naan != id2.naan or self.shoulder != id2.shoulder:
+                return False
+            p = P(self.postfix)
+            return p.is_relative_to(id2.postfix)
+
+    def joinpath(self, *args):
+        """
+        Return a new identifier with the given path appended.
+
+        Parameters
+        ----------
+        *args : Path-like strings (for now)
+        """
+        p = P(self.postfix)
+        return ARKIdentifier(self.naan, self.shoulder, str(p.joinpath(*args)))
+
+    def __truediv__(self, *args):
+        """
+        Return a new identifier with the given path appended.
+
+        Parameters
+        ----------
+        *args : Path-like strings (for now)
+        """
+        return self.joinpath(*args)
 
 
 class Client2(ect.Client):
