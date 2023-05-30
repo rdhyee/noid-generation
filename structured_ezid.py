@@ -42,6 +42,7 @@ class ARKIdentifier(EZIDIdentifier):
             shoulder, postfix = s[:shoulder_size], s[shoulder_size:]
         self.naan = naan
         self.shoulder = shoulder
+        self.shoulder_size = len(shoulder)
         if postfix == ".":  # translate the root to an empty string
             postfix = ""
         self.postfix = postfix
@@ -224,6 +225,7 @@ class Client2(ect.Client):
             return (None, None)
 
         else:
+            re1 = re.compile(r"(\S+)(?:\s*in_lieu_of\s*(\S+))?")
             g = re1.match(parsed_response["success"]).groups()
             if g is not None:
                 if g[1] is not None:
