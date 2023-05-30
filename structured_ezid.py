@@ -264,7 +264,9 @@ class Client2(ect.Client):
                                 -1 - len(wrong_candidate_ark.parts)
                             ]
                         return self.view_identifier_or_ancestor(
-                            next_candidate_ark, prefix_matching=True
+                            next_candidate_ark,
+                            prefix_matching=True,
+                            shoulder_size=shoulder_size,
                         )
                 else:
                     return (
