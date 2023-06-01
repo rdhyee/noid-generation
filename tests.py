@@ -182,6 +182,72 @@ class TestClient2:
             r = client2.create_identifier(ark_, metadata_, update=True)
             assert e.value.status == 400
 
+    def test_setup_prefixmatch(self, client2):
+        """
+        create a set of identifiers to test prefix matching -- maybe this should be a fixture
+        """
+        arks_to_create = (
+            sezid.ARKIdentifier(TEST_NAAN, TEST_SHOULDER, f"{TEST_ID}"),
+            sezid.ARKIdentifier(
+                TEST_NAAN, TEST_SHOULDER, f"{TEST_ID}/{TEST_PROJECT_ID}"
+            ),
+            sezid.ARKIdentifier(
+                TEST_NAAN, TEST_SHOULDER, f"{TEST_ID}/{TEST_PROJECT_ID}/a"
+            ),
+            sezid.ARKIdentifier(
+                TEST_NAAN, TEST_SHOULDER, f"{TEST_ID}/{TEST_PROJECT_ID}/a/b"
+            ),
+            sezid.ARKIdentifier(
+                TEST_NAAN, TEST_SHOULDER, f"{TEST_ID}/{TEST_PROJECT_ID}/a/c"
+            ),
+            sezid.ARKIdentifier(
+                TEST_NAAN, TEST_SHOULDER, f"{TEST_ID}/{TEST_PROJECT_ID}/a/c1"
+            ),
+            sezid.ARKIdentifier(
+                TEST_NAAN, TEST_SHOULDER, f"{TEST_ID}/{TEST_PROJECT_ID}/a/c1/d"
+            ),
+        )
+
+        for ark_ in arks_to_create:
+            dt = datetime.datetime.utcnow()
+
+            metadata_ = {
+                "profile": "erc",
+                "erc.who": "Raymond Yee",
+                "erc.what": ark_.postfix,
+                "erc.when": dt.replace(microsecond=0).isoformat(),
+            }
+
+            try:
+                (response, headers, status) = client2.create_identifier(
+                    ark_, metadata_, update=True
+                )
+            except ect.ClientError as e:
+                if isinstance(e, ect.HTTPClientError):
+                    print(e.status, str(e))
+                else:
+                    print(e, type(e))
+            else:
+                print(response, status)
+
+            ark0 = sezid.ARKIdentifier(
+                s="ark:/99999/fk4isamplestest/prefixmatch", shoulder_size=3
+            )
+
+            TEST_ID_MAPPING = [
+                ("a/c1/d", "a/c1/d"),
+                ("a/c/e", "a/c"),
+                ("a/c1/e", "a/c1"),
+                ("a/c12/d/e", "a"),
+            ]
+
+            for k, v in TEST_ID_MAPPING:
+                r = client2.view_identifier_or_ancestor(
+                    ark0 / k, prefix_matching=True, shoulder_size=3
+                )
+                print(k, v, r[0])
+                assert ark0 / v == r[0]
+
 
 class TestOcArksFilter:
     @pytest.mark.parametrize(
