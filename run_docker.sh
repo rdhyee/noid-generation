@@ -1,7 +1,7 @@
 #!/bin/sh
 
 set -e
-docker build -t rdhyee/noid-generation .
+docker build -f Dockerfile -t rdhyee/noid-generation .
 PORT=${1:-8888}
 
 # export EZID_USER=op://OpenContext/EZID-for-OpenContext/username

@@ -1,4 +1,5 @@
-FROM jupyter/scipy-notebook:2023-04-24
+FROM jupyter/scipy-notebook:2023-06-01
+# 2023-04-24
 # 2023-02-28
 
 # https://www.phind.com/search?cache=225c8894-dc96-4e39-8f12-494486109003
