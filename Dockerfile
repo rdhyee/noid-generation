@@ -1,4 +1,4 @@
-FROM jupyter/scipy-notebook:2023-06-01
+FROM jupyter/scipy-notebook:2023-06-06
 # 2023-04-24
 # 2023-02-28
 
