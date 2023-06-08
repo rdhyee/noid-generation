@@ -7,7 +7,11 @@ FROM jupyter/scipy-notebook:2023-06-06
 # Set environment variables to avoid prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
 
+# Make sure the contents of our repo are in ${HOME}
+COPY . ${HOME}
 USER root
+RUN chown -R ${NB_UID} ${HOME}
+# USER ${NB_USER}
 
 # Update package list and install required dependencies
 RUN apt-get update && \
@@ -32,6 +36,5 @@ RUN pip install git+https://github.com/rdhyee/noid-1.git@master#egg=noid \
     git+https://github.com/rdhyee/ezid-client-tools.git@installable#egg=ezid_client_tools \
     git+https://github.com/rdhyee/noidy.git@pip-package#egg=noidy
 
-USER $NB_UID
 
-VOLUME ["/user/jovan/", "/data"]
+VOLUME ["/home/jovan/work", "/data"]
