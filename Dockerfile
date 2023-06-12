@@ -29,12 +29,16 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Install the required Python packages
-RUN pip install git+https://github.com/rdhyee/noid-1.git@master#egg=noid \
-    click==8.0.3 \
-    colorama==0.4.4 \
-    pytest \
-    git+https://github.com/rdhyee/ezid-client-tools.git@installable#egg=ezid_client_tools \
-    git+https://github.com/rdhyee/noidy.git@pip-package#egg=noidy
+# RUN pip install git+https://github.com/rdhyee/noid-1.git@master#egg=noid \
+#     click==8.0.3 \
+#     colorama==0.4.4 \
+#     pytest \
+#     git+https://github.com/rdhyee/ezid-client-tools.git@installable#egg=ezid_client_tools \
+#     git+https://github.com/rdhyee/noidy.git@pip-package#egg=noidy
+
+# Install the required Python packages
+RUN pip install -r requirements.in
+
 
 
 VOLUME ["/home/jovan/work", "/data"]

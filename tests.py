@@ -4,6 +4,7 @@ import pytest
 import ezid_client_tools as ect
 from ezid_client_tools.utils import ANVL
 import structured_ezid as sezid
+import uuid
 
 
 EZID_USER = os.environ.get("EZID_USER")
@@ -22,6 +23,12 @@ TEST_PROJECT_ID = "prefixmatch"
 
 OC_NAAN = "28722"
 OC_PREREG_SHOULDER = "r2"
+
+
+def random_postfix(suffix: str = "") -> str:
+    """Generate a random postfix for an ARK identifier"""
+
+    return str(uuid.uuid4()).replace("-", "") + suffix
 
 
 def test_divide_by_zero():
@@ -128,10 +135,10 @@ class TestClient2:
         return client
 
     def test_percent_encoded_prefix(self, client2):
-        postfix = "#"
-        ark_ = sezid.ARKIdentifier(TEST_NAAN, TEST_SHOULDER, postfix)
+        postfix = random_postfix()
+        ark_ = sezid.ARKIdentifier(TEST_NAAN, TEST_SHOULDER, postfix + "#")
         (response, headers, status) = client2.create_identifier(ark_, update=True)
-        assert response == f"success: ark:/{TEST_NAAN}/{TEST_SHOULDER}%2523"
+        assert response == f"success: ark:/{TEST_NAAN}/{TEST_SHOULDER}{postfix}%2523"
         assert status == 201
 
     def test_invalid_posfix(self, client2):
@@ -151,7 +158,7 @@ class TestClient2:
             "erc.when": dt.replace(microsecond=0).isoformat(),
         }
 
-        postfix = TEST_ID
+        postfix = random_postfix()
         ark_ = sezid.ARKIdentifier(TEST_NAAN, TEST_SHOULDER, postfix)
 
         (response, headers, status) = client2.create_identifier(
@@ -186,27 +193,25 @@ class TestClient2:
         """
         create a set of identifiers to test prefix matching -- maybe this should be a fixture
         """
+
+        postfix = random_postfix()
+        ark0 = sezid.ARKIdentifier(TEST_NAAN, TEST_SHOULDER, postfix)
+
         arks_to_create = (
-            sezid.ARKIdentifier(TEST_NAAN, TEST_SHOULDER, f"{TEST_ID}"),
-            sezid.ARKIdentifier(
-                TEST_NAAN, TEST_SHOULDER, f"{TEST_ID}/{TEST_PROJECT_ID}"
-            ),
-            sezid.ARKIdentifier(
-                TEST_NAAN, TEST_SHOULDER, f"{TEST_ID}/{TEST_PROJECT_ID}/a"
-            ),
-            sezid.ARKIdentifier(
-                TEST_NAAN, TEST_SHOULDER, f"{TEST_ID}/{TEST_PROJECT_ID}/a/b"
-            ),
-            sezid.ARKIdentifier(
-                TEST_NAAN, TEST_SHOULDER, f"{TEST_ID}/{TEST_PROJECT_ID}/a/c"
-            ),
-            sezid.ARKIdentifier(
-                TEST_NAAN, TEST_SHOULDER, f"{TEST_ID}/{TEST_PROJECT_ID}/a/c1"
-            ),
-            sezid.ARKIdentifier(
-                TEST_NAAN, TEST_SHOULDER, f"{TEST_ID}/{TEST_PROJECT_ID}/a/c1/d"
-            ),
+            ark0,
+            ark0 / "a",
+            ark0 / "a/b",
+            ark0 / "a/c",
+            ark0 / "a/c1",
+            ark0 / "a/c1/d",
         )
+
+        TEST_ID_MAPPING = [
+            ("a/c1/d", "a/c1/d"),
+            ("a/c/e", "a/c"),
+            ("a/c1/e", "a/c1"),
+            ("a/c12/d/e", "a"),
+        ]
 
         for ark_ in arks_to_create:
             dt = datetime.datetime.utcnow()
@@ -230,23 +235,12 @@ class TestClient2:
             else:
                 print(response, status)
 
-            ark0 = sezid.ARKIdentifier(
-                s="ark:/99999/fk4isamplestest/prefixmatch", shoulder_size=3
+        for k, v in TEST_ID_MAPPING:
+            r = client2.view_identifier_or_ancestor(
+                ark0 / k, prefix_matching=True, shoulder_size=3
             )
-
-            TEST_ID_MAPPING = [
-                ("a/c1/d", "a/c1/d"),
-                ("a/c/e", "a/c"),
-                ("a/c1/e", "a/c1"),
-                ("a/c12/d/e", "a"),
-            ]
-
-            for k, v in TEST_ID_MAPPING:
-                r = client2.view_identifier_or_ancestor(
-                    ark0 / k, prefix_matching=True, shoulder_size=3
-                )
-                print(k, v, r[0])
-                assert ark0 / v == r[0]
+            print(k, v, r[0])
+            assert ark0 / v == r[0]
 
 
 class TestOcArksFilter:
