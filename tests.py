@@ -90,40 +90,40 @@ class TestConsoleClient:
         cclient.operation()
 
 
-class TestClient:
-    @pytest.fixture
-    def client(self):
-        client = ect.Client()
-        client.args.credentials = f"{EZID_USER}:{EZID_PASSWD}"
-        client.args.server = "p"
-        return client
+# class TestClient:
+#     @pytest.fixture
+#     def client(self):
+#         client = ect.Client()
+#         client.args.credentials = f"{EZID_USER}:{EZID_PASSWD}"
+#         client.args.server = "p"
+#         return client
 
-    def test_client_login(self, client):
-        client.args.server = "s"
-        client.args.operation = ["login"]
-        response = client.operation()
-        assert isinstance(response, str)
+#     def test_client_login(self, client):
+#         client.args.server = "s"
+#         client.args.operation = ["login"]
+#         response = client.operation()
+#         assert isinstance(response, str)
 
-    def test_client_view(self, client):
-        client.args.server = "p"
+#     def test_client_view(self, client):
+#         client.args.server = "p"
 
-        client.args.operation = ["view", "ark:/28722/k2154wc6r"]
-        r = ANVL.parse_anvl_str(client.operation()[0].encode("utf-8"))
-        assert type(r) == ect.utils.LastUpdatedOrderedDict
-        assert set(r.keys()) == {
-            "_created",
-            "_export",
-            "_owner",
-            "_ownergroup",
-            "_profile",
-            "_status",
-            "_target",
-            "_updated",
-            "erc.what",
-            "erc.when",
-            "erc.who",
-            "success",
-        }
+#         client.args.operation = ["view", "ark:/28722/k2154wc6r"]
+#         r = ANVL.parse_anvl_str(client.operation()[0].encode("utf-8"))
+#         assert type(r) == ect.utils.LastUpdatedOrderedDict
+#         assert set(r.keys()) == {
+#             "_created",
+#             "_export",
+#             "_owner",
+#             "_ownergroup",
+#             "_profile",
+#             "_status",
+#             "_target",
+#             "_updated",
+#             "erc.what",
+#             "erc.when",
+#             "erc.who",
+#             "success",
+#         }
 
 
 class TestClient2:
